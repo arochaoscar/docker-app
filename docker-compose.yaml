@@ -1,0 +1,73 @@
+version: '3.8'
+services:
+  orchestrator:
+    image: api-orchestrator
+    ports:
+      - 3000:3000
+    environment:
+      - API_KEY=${API_KEY}
+    links:
+      - products:products
+      - orders:orders
+    volumes:
+      - ${HOME_DEV}/docker-app/api-orchestrator/app:/home/node/app
+
+  products:
+    image: api-products
+    ports:
+      - 4000:4000
+    environment:
+      - API_KEY=${API_KEY}
+      - DB_SERVER=${MYSQL_DB_SERVER}
+      - DB_NAME=${MYSQL_DB_NAME}
+      - DB_USER=${MYSQL_DB_USER}
+      - DB_PASS=${MYSQL_DB_PASS}
+    links:
+      - mysql:mysql      
+    volumes:
+      - ${HOME_DEV}/docker-app/api-products:/home/node/app
+
+  orders:
+    image: api-orders
+    ports:
+      - 9000:9000
+    environment:
+      - API_KEY=${API_KEY}
+      - DB_SERVER=${PG_DB_SERVER}
+      - DB_NAME=${PG_DB_NAME}
+      - DB_USER=${PG_DB_USER}
+      - DB_PASS=${PG_DB_PASS}      
+    volumes:
+      - ${HOME_DEV}/docker-app/api-orders/app:/home/node/app
+    links:
+      - postgres:postgres
+
+  mysql:
+    image: mysql:8.0.13
+    ports:
+      - 33060:33060
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_DB_PASS}
+    volumes:
+      - ${HOME_DEV}/docker-app/mysql-data:/var/lib/mysql
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: ${PG_DB_NAME}
+      POSTGRES_USER: ${PG_DB_USER}
+      POSTGRES_PASSWORD: ${PG_DB_PASS}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: md5
+    volumes:
+      - ${HOME_DEV}/docker-app/postgres-data:/var/lib/postgresql/data/pgdata
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    links:
+      - postgres:postgres
